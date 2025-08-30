@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - E-Cart</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .auth-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 15px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .auth-header h1 {
+            color: #333;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-header p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e1e1e1;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group input.error {
+            border-color: #e74c3c;
+        }
+
+        .password-strength {
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .strength-weak { color: #e74c3c; }
+        .strength-medium { color: #f39c12; }
+        .strength-strong { color: #27ae60; }
+
+        .btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .auth-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e1e1e1;
+        }
+
+        .auth-footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .auth-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .alert {
+            padding: 0.75rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .alert-error {
+            background-color: #fee;
+            border: 1px solid #fcc;
+            color: #c00;
+        }
+
+        .alert-success {
+            background-color: #efe;
+            border: 1px solid #cfc;
+            color: #060;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(102, 126, 234, 0.3);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-header">
+            <h1>Create Account</h1>
+            <p>Join E-Cart today</p>
+        </div>
+
+        <div id="alert" class="alert" style="display: none;"></div>
+        
+        <form id="signupForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required minlength="3">
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required minlength="6">
+                <div id="passwordStrength" class="password-strength"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <span>Creating account...</span>
+            </div>
+
+            <button type="submit" class="btn" id="signupBtn">Create Account</button>
+        </form>
+
+        <div class="auth-footer">
+            <p>Already have an account? <a href="/login">Sign in here</a></p>
+        </div>
+    </div>
+
+    <script>
+        const signupForm = document.getElementById('signupForm');
+        const signupBtn = document.getElementById('signupBtn');
+        const loading = document.getElementById('loading');
+        const alert = document.getElementById('alert');
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const passwordStrength = document.getElementById('passwordStrength');
+
+        function showAlert(message, type = 'error') {
+            alert.textContent = message;
+            alert.className = `alert alert-${type}`;
+            alert.style.display = 'block';
+        }
+
+        function hideAlert() {
+            alert.style.display = 'none';
+        }
+
+        function showLoading() {
+            loading.style.display = 'block';
+            signupBtn.disabled = true;
+            signupBtn.textContent = 'Creating Account...';
+        }
+
+        function hideLoading() {
+            loading.style.display = 'none';
+            signupBtn.disabled = false;
+            signupBtn.textContent = 'Create Account';
+        }
+
+        function checkPasswordStrength(password) {
+            const strength = {
+                0: 'Very Weak',
+                1: 'Weak',
+                2: 'Fair',
+                3: 'Good',
+                4: 'Strong'
+            };
+
+            let score = 0;
+
+            // Password length
+            if (password.length >= 8) score++;
+            
+            // Contains lowercase
+            if (/[a-z]/.test(password)) score++;
+            
+            // Contains uppercase
+            if (/[A-Z]/.test(password)) score++;
+            
+            // Contains numbers
+            if (/\d/.test(password)) score++;
+            
+            // Contains special characters
+            if (/[^A-Za-z0-9]/.test(password)) score++;
+
+            return { score, text: strength[score] };
+        }
+
+        passwordInput.addEventListener('input', () => {
+            const password = passwordInput.value;
+            if (password.length > 0) {
+                const result = checkPasswordStrength(password);
+                let className = 'strength-weak';
+                
+                if (result.score >= 3) className = 'strength-medium';
+                if (result.score >= 4) className = 'strength-strong';
+                
+                passwordStrength.textContent = `Strength: ${result.text}`;
+                passwordStrength.className = `password-strength ${className}`;
+            } else {
+                passwordStrength.textContent = '';
+            }
+        });
+
+        confirmPasswordInput.addEventListener('input', () => {
+            const password = passwordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+            
+            if (confirmPassword.length > 0) {
+                if (password !== confirmPassword) {
+                    confirmPasswordInput.classList.add('error');
+                } else {
+                    confirmPasswordInput.classList.remove('error');
+                }
+            }
+        });
+
+        signupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideAlert();
+            
+            const formData = new FormData(signupForm);
+            const data = {
+                username: formData.get('username'),
+                email: formData.get('email'),
+                password: formData.get('password'),
+                confirmPassword: formData.get('confirmPassword')
+            };
+
+            // Client-side validation
+            if (!data.username || !data.email || !data.password || !data.confirmPassword) {
+                showAlert('Please fill in all fields');
+                return;
+            }
+
+            if (data.username.length < 3) {
+                showAlert('Username must be at least 3 characters long');
+                return;
+            }
+
+            if (data.password.length < 6) {
+                showAlert('Password must be at least 6 characters long');
+                return;
+            }
+
+            if (data.password !== data.confirmPassword) {
+                showAlert('Passwords do not match');
+                return;
+            }
+
+            showLoading();
+
+            try {
+
+                const response = await fetch('/api/auth/register', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+        name: data.username,  // backend expects "name", not "username"
+        email: data.email,
+        password: data.password
+    })
+});
+
+const result = await response.json();
+
+if (response.ok) {
+    showAlert('Account created successfully! Redirecting...', 'success');
+    setTimeout(() => {
+        window.location.href = '/login';
+    }, 1000);
+} else {
+    showAlert(result.message || 'Signup failed');
+} } finally {
+                hideLoading();
+            }
+        });
+
+        // Auto-focus username field
+        document.getElementById('username').focus();
+    </script>
+</body>
+</html>
