@@ -26,6 +26,58 @@ body {
   line-height: 1.6;
 }
 
+/* navbar  */
+
+nav a {
+  text-decoration: none;
+}
+
+#authButtons {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  color: white;
+}
+
+.btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  transition: 0.2s ease-in-out;
+}
+
+.btn-login {
+  background: #007bff;
+  color: white;
+}
+.btn-login:hover {
+  background: #0056b3;
+}
+
+.btn-signup {
+  background: #28a745;
+  color: white;
+}
+.btn-signup:hover {
+  background: #1c7d31;
+}
+
+.btn-logout {
+  background:red;
+  color: black;
+}
+.btn-logout:hover {
+  background: #a71d2a;
+}
+
+.user-name {
+  font-weight: bold;
+  margin-right: 10px;
+  color: #f1c40f;
+}
+
 /* Typography */
 .brand {
   background: var(--grad);

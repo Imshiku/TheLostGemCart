@@ -1,3 +1,296 @@
+// // ----------------- Utilities -----------------
+// const $ = (selector) => document.querySelector(selector);
+// const $$ = (selector) => document.querySelectorAll(selector);
+
+// // ----------------- API -----------------
+// const API_BASE = '/api';
+
+// const api = {
+//   async get(endpoint) {
+//     try {
+//       const response = await fetch(`${API_BASE}${endpoint}`, { credentials: 'include' });
+//       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+//       return await response.json();
+//     } catch (error) {
+//       console.error('API GET Error:', error);
+//       throw error;
+//     }
+//   },
+
+//   async post(endpoint, data) {
+//     try {
+//       const response = await fetch(`${API_BASE}${endpoint}`, {
+//         method: 'POST',
+//         headers: { 'Content-Type': 'application/json' },
+//         body: JSON.stringify(data),
+//         credentials: 'include'
+//       });
+//       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+//       return await response.json();
+//     } catch (error) {
+//       console.error('API POST Error:', error);
+//       throw error;
+//     }
+//   }
+// };
+
+// // ----------------- Toast -----------------
+// const showToast = (message, type = 'success', duration = 2500) => {
+//   const toastEl = document.createElement('div');
+//   toastEl.className = `toast align-items-center text-white bg-${type} border-0 show`;
+//   toastEl.role = 'alert';
+//   toastEl.innerHTML = `<div class="d-flex">
+//     <div class="toast-body">${message}</div>
+//     <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+//   </div>`;
+//   document.body.appendChild(toastEl);
+//   setTimeout(() => toastEl.remove(), duration);
+// };
+
+// // ----------------- Cart Functions -----------------
+// const updateCartDisplay = async () => {
+//   try {
+//     const cart = await api.get('/cart');
+//     $('#cartCount').textContent = cart.items.length || 0;
+
+//     const cartContainer = $('#cartContainer');
+//     if (!cart.items.length) {
+//       $('#emptyCartState').classList.remove('d-none');
+//       $('#cartSummary').classList.add('d-none');
+//       cartContainer.innerHTML = '';
+//       return;
+//     }
+
+//     $('#emptyCartState').classList.add('d-none');
+//     $('#cartSummary').classList.remove('d-none');
+
+//     cartContainer.innerHTML = cart.items.map(item => `
+//       <div class="d-flex justify-content-between align-items-center mb-2">
+//         <span>${item.product.name} x ${item.quantity}</span>
+//         <span>$${item.itemTotal.toFixed(2)}</span>
+//       </div>
+//     `).join('');
+
+//     $('#cartSubtotal').textContent = `$${cart.subtotal.toFixed(2)}`;
+//     $('#cartTax').textContent = `$${cart.tax.toFixed(2)}`;
+//     $('#cartShipping').textContent = `$${cart.shipping.toFixed(2)}`;
+//     $('#cartTotal').textContent = `$${cart.total.toFixed(2)}`;
+//   } catch (error) {
+//     console.error('Error updating cart display:', error);
+//   }
+// };
+
+// const addToCart = async (productId, quantity = 1) => {
+//   try {
+//     console.log("➡️ Sending to backend:", { productId, quantity });
+//     const result = await api.post('/cart', { productId, quantity });
+//     await updateCartDisplay();
+//     showToast(result.message || 'Product added to cart');
+//   } catch (error) {
+//     console.error('Error adding to cart:', error);
+//     showToast('Failed to add product to cart', 'danger');
+//   }
+// };
+
+// // ----------------- Product Functions -----------------
+// const createProductCard = (product) => `
+//   <div class="col-md-4 mb-4">
+//     <div class="card h-100 shadow-sm">
+//       <img src="${product.image || 'placeholder.png'}" class="card-img-top" alt="${product.name}">
+//       <div class="card-body d-flex flex-column">
+//         <h5 class="card-title">${product.name}</h5>
+//         <p class="card-text text-muted">${product.description || ''}</p>
+//         <div class="mt-auto">
+//           <div class="d-flex align-items-center mb-2">
+//             <input type="number" min="1" value="1" class="form-control form-control-sm quantity-input me-2" data-product-id="${product._id}" style="width: 60px;">
+//             <span class="fw-bold">$${product.price.toFixed(2)}</span>
+//           </div>
+//           <button class="btn btn-sm btn-outline-primary add-to-cart-btn w-100" data-product-id="${product._id}">
+//             <i class="bi bi-cart-plus"></i> Add to Cart
+//           </button>
+//         </div>
+//       </div>
+//     </div>
+//   </div>
+// `;
+
+// let currentProducts = [];
+
+// const renderProducts = (products) => {
+//   const grid = $('#productsGrid');
+//   if (!products || !products.length) {
+//     grid.innerHTML = '<p class="text-center">No products found</p>';
+//     return;
+//   }
+//   grid.innerHTML = products.map(createProductCard).join('');
+
+//   // Event listeners for Add-to-Cart buttons
+//   $$('.add-to-cart-btn').forEach(btn => {
+//     btn.addEventListener('click', (e) => {
+//       e.preventDefault();
+//       const productId = btn.dataset.productId;
+//       const qtyInput = document.querySelector(`.quantity-input[data-product-id="${productId}"]`);
+//       const quantity = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
+//       addToCart(productId, quantity);
+//     });
+//   });
+// };
+
+// // ----------------- Filters -----------------
+// let currentFilters = { category: 'all', sortBy: 'name', sortOrder: 'asc', minPrice: null, maxPrice: null };
+
+// const applyFilters = () => {
+//   let filtered = currentProducts.slice();
+//   if (currentFilters.category && currentFilters.category !== 'all') {
+//     filtered = filtered.filter(p => p.category === currentFilters.category);
+//   }
+//   if (currentFilters.minPrice != null) filtered = filtered.filter(p => p.price >= currentFilters.minPrice);
+//   if (currentFilters.maxPrice != null) filtered = filtered.filter(p => p.price <= currentFilters.maxPrice);
+
+//   if (currentFilters.sortBy) {
+//     filtered.sort((a, b) => {
+//       let valA = a[currentFilters.sortBy];
+//       let valB = b[currentFilters.sortBy];
+//       if (typeof valA === 'string') valA = valA.toLowerCase();
+//       if (typeof valB === 'string') valB = valB.toLowerCase();
+//       if (valA < valB) return currentFilters.sortOrder === 'asc' ? -1 : 1;
+//       if (valA > valB) return currentFilters.sortOrder === 'asc' ? 1 : -1;
+//       return 0;
+//     });
+//   }
+
+//   renderProducts(filtered);
+// };
+
+// const setupFilters = () => {
+//   $('#categoryFilter').addEventListener('change', e => {
+//     currentFilters.category = e.target.value;
+//     applyFilters();
+//   });
+
+//   $('#sortFilter').addEventListener('change', e => {
+//     const [sortBy, sortOrder] = e.target.value.split(':');
+//     currentFilters.sortBy = sortBy;
+//     currentFilters.sortOrder = sortOrder;
+//     applyFilters();
+//   });
+
+//   $('#minPrice').addEventListener('input', e => {
+//     currentFilters.minPrice = e.target.value ? parseFloat(e.target.value) : null;
+//     applyFilters();
+//   });
+
+//   $('#maxPrice').addEventListener('input', e => {
+//     currentFilters.maxPrice = e.target.value ? parseFloat(e.target.value) : null;
+//     applyFilters();
+//   });
+
+//   $('#clearFiltersBtn').addEventListener('click', () => {
+//     currentFilters = { category: 'all', sortBy: 'name', sortOrder: 'asc', minPrice: null, maxPrice: null };
+//     $('#categoryFilter').value = 'all';
+//     $('#sortFilter').value = 'name:asc';
+//     $('#minPrice').value = '';
+//     $('#maxPrice').value = '';
+//     applyFilters();
+//   });
+// };
+
+// // ----------------- Search -----------------
+// $('#searchForm').addEventListener('submit', async (e) => {
+//   e.preventDefault();
+//   const term = $('#searchInput').value.toLowerCase();
+//   const filtered = currentProducts.filter(p => p.name.toLowerCase().includes(term));
+//   renderProducts(filtered);
+// });
+
+// // ----------------- Fetch Products -----------------
+// const fetchProducts = async () => {
+//   try {
+//     $('#loadingSpinner').classList.remove('d-none');
+//     const data = await api.get('/products');
+//     currentProducts = data.products || [];
+//     const categories = [...new Set(currentProducts.map(p => p.category))];
+//     const catDropdown = $('#categoriesDropdown');
+//     categories.forEach(cat => {
+//       const li = document.createElement('li');
+//       li.innerHTML = `<a class="dropdown-item" href="#" data-category="${cat}">${cat}</a>`;
+//       catDropdown.appendChild(li);
+//     });
+
+//     renderProducts(currentProducts);
+//     setupFilters();
+//     $('#loadingSpinner').classList.add('d-none');
+//   } catch (error) {
+//     console.error('Error fetching products:', error);
+//     $('#productsGrid').innerHTML = '<p class="text-center text-danger">Failed to load products</p>';
+//     showToast('Error loading products', 'danger');
+//   }
+// };
+
+// // ----------------- Checkout & Cart Buttons -----------------
+// $('#clearCartBtn').addEventListener('click', async () => {
+//   try {
+//     await api.post('/cart/clear', {});
+//     await updateCartDisplay();
+//     showToast('Cart cleared');
+//   } catch (error) {
+//     console.error(error);
+//     showToast('Failed to clear cart', 'danger');
+//   }
+// });
+
+// $('#checkoutBtn').addEventListener('click', async () => {
+//   try {
+//     const result = await api.post('/checkout', {});
+//     await updateCartDisplay();
+//     showToast(`Order ${result.orderId} placed! Total $${result.total.toFixed(2)}`);
+//   } catch (error) {
+//     console.error(error);
+//     showToast('Checkout failed', 'danger');
+//   }
+// });
+
+// // ----------------- Auth Buttons -----------------
+// const updateAuthButtons = async () => {
+//   const container = $('#authButtons');
+//   try {
+//     const user = await api.get('/auth/me');
+//     if (user && user.name) {
+//       container.innerHTML = `
+//         <button class="btn btn-outline-light dropdown-toggle" data-bs-toggle="dropdown">
+//           Hi, ${user.name}
+//         </button>
+//         <ul class="dropdown-menu dropdown-menu-end">
+//           <li><a class="dropdown-item" href="/profile">Profile</a></li>
+//           <li><a class="dropdown-item" href="/logout" id="logoutBtn">Logout</a></li>
+//         </ul>`;
+//       $('#logoutBtn').addEventListener('click', async e => {
+//         e.preventDefault();
+//         await api.post('/auth/logout', {});
+//         window.location.reload();
+//       });
+//     } else {
+//       container.innerHTML = `
+//         <a href="/login" class="btn btn-primary me-2">Login</a>
+//         <a href="/signup" class="btn btn-outline-light">Sign Up</a>`;
+//     }
+//   } catch {
+//     container.innerHTML = `
+//       <a href="/login" class="btn btn-primary me-2">Login</a>
+//       <a href="/signup" class="btn btn-outline-light">Sign Up</a>`;
+//   }
+// };
+
+// // ----------------- Init -----------------
+// document.addEventListener('DOMContentLoaded', async () => {
+//   fetchProducts();
+//   updateCartDisplay();
+//   updateAuthButtons();
+// });
+
+
+// claude code 
+
 // DOM Helper Functions
 const $ = (selector, parent = document) => parent.querySelector(selector);
 const $$ = (selector, parent = document) => Array.from(parent.querySelectorAll(selector));
@@ -343,36 +636,23 @@ const updateProductsStats = (count) => {
 // Cart Functions
 const addToCart = async (productId, quantity = 1) => {
   try {
-    console.log('Adding to cart:', productId, quantity);
-    
-    // Check authentication first
-    const authRes = await fetch("/api/auth/me", { credentials: "include" });
-    if (!authRes.ok) {
-      console.log('User not authenticated');
+    // Check if user is logged in
+    if (!currentUser) {
       showToast('Please login to add items to cart', 'error');
-      setTimeout(() => window.location.href = '/login', 1500);
+      window.location.href = '/login';
       return;
     }
 
-    const authData = await authRes.json();
-    currentUser = authData.user;
-    console.log('User authenticated:', currentUser.name);
-
-    // Add to cart API call
     const result = await api.post('/cart', { productId, quantity });
-    console.log('Add to cart response:', result);
-    
-    // Update cart display
     await updateCartDisplay();
     showToast(result.message || 'Product added to cart');
-    
   } catch (error) {
     console.error('Error adding to cart:', error);
-    if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+    if (error.message.includes('401')) {
       showToast('Please login to add items to cart', 'error');
-      setTimeout(() => window.location.href = '/login', 1500);
+      window.location.href = '/login';
     } else {
-      showToast(error.message || 'Failed to add product to cart', 'error');
+      showToast('Failed to add product to cart', 'error');
     }
   }
 };
@@ -431,25 +711,18 @@ const clearCart = async () => {
 
 const updateCartDisplay = async () => {
   try {
-    // Check if user is authenticated
-    const authRes = await fetch("/api/auth/me", { credentials: "include" });
-    if (!authRes.ok) {
-      // User not logged in, show empty cart
-      renderCart({ items: [], subtotal: 0, tax: 0, shipping: 0, total: 0, itemCount: 0 });
+    if (!currentUser) {
+      // Show empty cart for non-logged in users
+      renderCart({ items: [], subtotal: 0, tax: 0, shipping: 0, total: 0 });
       return;
     }
 
-    const authData = await authRes.json();
-    currentUser = authData.user;
-
-    // Get cart data
     const cartData = await api.get('/cart');
-    console.log('Cart data received:', cartData);
     renderCart(cartData);
   } catch (error) {
     console.error('Error fetching cart:', error);
     // Show empty cart on error
-    renderCart({ items: [], subtotal: 0, tax: 0, shipping: 0, total: 0, itemCount: 0 });
+    renderCart({ items: [], subtotal: 0, tax: 0, shipping: 0, total: 0 });
   }
 };
 
@@ -459,34 +732,24 @@ const renderCart = (cartData) => {
   const summary = $('#cartSummary');
   const cartCount = $('#cartCount');
   
-  console.log('Rendering cart with data:', cartData);
-  
-  if (!container || !emptyState || !summary || !cartCount) {
-    console.log('Cart elements not found in DOM');
-    return;
-  }
+  if (!container || !emptyState || !summary || !cartCount) return;
   
   // Update cart counter
-  const itemCount = cartData.itemCount || (cartData.items ? cartData.items.reduce((sum, item) => sum + item.quantity, 0) : 0);
+  const itemCount = cartData.items ? cartData.items.reduce((sum, item) => sum + item.quantity, 0) : 0;
   cartCount.textContent = itemCount;
   
   if (!cartData.items || cartData.items.length === 0) {
-    console.log('Cart is empty, showing empty state');
     container.innerHTML = '';
     emptyState.classList.remove('d-none');
     summary.classList.add('d-none');
     return;
   }
   
-  console.log('Cart has items:', cartData.items.length);
   emptyState.classList.add('d-none');
   summary.classList.remove('d-none');
   
   // Render cart items
-  container.innerHTML = cartData.items.map(item => {
-    console.log('Rendering cart item:', item);
-    
-    return `
+  container.innerHTML = cartData.items.map(item => `
     <div class="cart-row py-3 d-flex align-items-center border-bottom">
       <img src="${item.product.image}" 
            alt="${item.product.name}" 
@@ -503,14 +766,14 @@ const renderCart = (cartData) => {
         <div class="d-flex align-items-center">
           <div class="input-group input-group-sm me-2" style="width: 120px;">
             <button class="btn btn-outline-secondary" type="button" 
-                    onclick="updateCartQuantity('${item.productId}', ${Math.max(1, (item.quantity || item.qty) - 1)})">
+                    onclick="updateCartQuantity('${item.productId}', ${Math.max(1, item.quantity - 1)})">
               <i class="bi bi-dash"></i>
             </button>
             <input type="number" class="form-control text-center" 
-                   value="${item.quantity || item.qty}" min="1" 
+                   value="${item.quantity}" min="1" 
                    onchange="updateCartQuantity('${item.productId}', this.value)">
             <button class="btn btn-outline-secondary" type="button"
-                    onclick="updateCartQuantity('${item.productId}', ${(item.quantity || item.qty) + 1})">
+                    onclick="updateCartQuantity('${item.productId}', ${item.quantity + 1})">
               <i class="bi bi-plus"></i>
             </button>
           </div>
@@ -522,7 +785,7 @@ const renderCart = (cartData) => {
         </div>
       </div>
     </div>
-  `}).join('');
+  `).join('');
   
   // Update summary
   const subtotalEl = $('#cartSubtotal');
@@ -534,8 +797,6 @@ const renderCart = (cartData) => {
   if (taxEl) taxEl.textContent = formatPrice(cartData.tax || 0);
   if (shippingEl) shippingEl.textContent = cartData.shipping === 0 ? 'Free' : formatPrice(cartData.shipping || 0);
   if (totalEl) totalEl.textContent = formatPrice(cartData.total || 0);
-  
-  console.log('Cart rendered successfully');
 };
 
 const processCheckout = async () => {

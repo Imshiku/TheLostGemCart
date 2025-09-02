@@ -1,0 +1,52 @@
+
+  <nav class="navbar navbar-expand-lg sticky-top bg-dark navbar-dark">
+  <div class="container py-2">
+    <a class="navbar-brand brand fs-3" href="#">
+      <i class="bi bi-cart4 me-2"></i>TheLostGemCart
+    </a>
+    
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link active" href="#" id="productsNavLink">
+            <i class="bi bi-grid me-1"></i>Products
+          </a>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" id="Categoriesbox" href="#" role="button" data-bs-toggle="dropdown">
+            <i class="bi bi-tags me-1"></i>Categories
+          </a>
+          <ul class="dropdown-menu" id="categoriesDropdown">
+            <li><a class="dropdown-item" href="#" data-category="all">All Products</a></li>
+          </ul>
+        </li>
+      </ul>
+      
+      <!-- Search bar -->
+      <form id="searchForm" class="d-flex me-3" role="search">
+        <input id="searchInput" class="form-control me-2 search-input" type="search" 
+               placeholder="Search products..." aria-label="Search">
+        <button class="btn btn-outline-light" type="submit">
+          <i class="bi bi-search"></i>
+        </button>
+      </form>
+      
+      <!-- Cart Button -->
+      <button class="btn btn-outline-light position-relative me-3" data-bs-toggle="offcanvas" data-bs-target="#cartCanvas">
+        <i class="bi bi-bag me-1"></i>Cart
+        <span id="cartCount" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+          0
+        </span>
+      </button>
+
+      <!-- ✅ Login Button -->
+      <!-- <a href="login.html" class="btn btn-primary">Login</a> -->
+         <!-- <div id="authButtons" class="btn"></div> 👈 this will be replaced dynamically -->
+          <div class="dropdown" id="authButtons"></div>
+    </div>
+  </div>
+</nav>

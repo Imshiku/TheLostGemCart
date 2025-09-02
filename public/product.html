@@ -3,97 +3,542 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Product Details</title>
+  <title>Product Details - eCart</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .btn-gradient {
+      background: var(--primary-gradient);
+      border: none;
+      color: white;
+      transition: all 0.3s ease;
+    }
+
+    .btn-gradient:hover {
+      background: var(--secondary-gradient);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .navbar {
+      background: var(--primary-gradient) !important;
+    }
+
+    .product-image {
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .price-section {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin: 1rem 0;
+    }
+
+    .features-list {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 1rem;
+    }
+
+    .carousel-control-prev,
+    .carousel-control-next {
+      background: rgba(0,0,0,0.5);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1050;
+    }
+  </style>
 </head>
 <body class="bg-light">
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="/">
+        <i class="bi bi-cart4 me-2"></i>eCart
+      </a>
+      
+      <div class="d-flex align-items-center">
+        <!-- Cart Icon -->
+        <button class="btn btn-outline-light me-3" data-bs-toggle="offcanvas" data-bs-target="#cartCanvas">
+          <i class="bi bi-cart3"></i>
+          <span id="cartCount" class="badge bg-danger ms-1">0</span>
+        </button>
+        
+        <!-- Auth Section -->
+        <div id="authButtons"></div>
+      </div>
+    </div>
+  </nav>
 
+  <!-- Main Content -->
+  <div class="container my-5">
+    <!-- Back Button -->
+    <div class="mb-4">
+      <button class="btn btn-outline-secondary" onclick="goBack()">
+        <i class="bi bi-arrow-left me-2"></i>Back to Products
+      </button>
+    </div>
 
+    <!-- Loading State -->
+    <div id="productLoading" class="text-center py-5">
+      <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+      <p class="mt-3 text-muted">Loading product details...</p>
+    </div>
 
-  <div class="container my-4">
-  <div id="back-button-container"></div> <!-- placeholder for Go Back button -->
-  <div id="product-container" class="card shadow-lg p-4">
-    <!-- Product details will load here -->
-  </div>
-</div>
+    <!-- Error State -->
+    <div id="productError" style="display: none;"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const productId = params.get("id");
-
-    async function loadProduct() {
-      try {
-        const res = await fetch(`/api/products/${productId}`);
-        if (!res.ok) throw new Error("Product not found");
-        const product = await res.json();
-
-        // Carousel items
-        const carouselItems = product.images.map((img, index) => `
-          <div class="carousel-item ${index === 0 ? 'active' : ''}">
-            <img src="${img}" class="d-block w-100 rounded" alt="Product image">
-          </div>
-        `).join("");
-
-        document.getElementById("product-container").innerHTML = `
+    <!-- Product Content -->
+    <div id="productContent" style="display: none;">
+      <div class="card shadow-lg">
+        <div class="card-body p-5">
           <div class="row">
-            <!-- Product images carousel -->
-            <div class="col-md-6">
-              <div id="carouselExample" class="carousel slide">
-                <div class="carousel-inner">
-                  ${carouselItems}
+            <!-- Product Images -->
+            <div class="col-md-6 mb-4">
+              <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner" id="carouselImages">
+                  <!-- Images will be loaded here -->
                 </div>
-                <button class="carousel-control-prev" type="button" data-bs-target="#carouselExample" data-bs-slide="prev">
+                <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
                   <span class="carousel-control-prev-icon"></span>
                 </button>
-                <button class="carousel-control-next" type="button" data-bs-target="#carouselExample" data-bs-slide="next">
+                <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
                   <span class="carousel-control-next-icon"></span>
                 </button>
               </div>
             </div>
 
-            <!-- Product details -->
+            <!-- Product Details -->
             <div class="col-md-6">
-              <h2>${product.name}</h2>
-              <p class="text-muted">Brand: ${product.brand} | Category: ${product.category}</p>
-              <h4 class="text-success">
-                $${product.price.toFixed(2)} 
-                <small class="text-decoration-line-through text-muted">$${product.originalPrice.toFixed(2)}</small>
-              </h4>
-              <p>${product.description}</p>
-              <ul>
-                ${product.features.map(f => `<li>${f}</li>`).join("")}
-              </ul>
-              <button class="btn btn-primary mt-3" onclick="addToCart('${product.id}')">Add to Cart</button>
+              <!-- Product Title and Brand -->
+              <div class="mb-3">
+                <h1 id="productName" class="display-5 fw-bold mb-2"></h1>
+                <div class="d-flex align-items-center gap-3 mb-3">
+                  <span class="text-muted">by <span id="productBrand" class="fw-semibold"></span></span>
+                  <span id="productCategory" class="badge bg-secondary"></span>
+                </div>
+              </div>
+
+              <!-- Rating -->
+              <div class="d-flex align-items-center mb-3">
+                <div id="productRating" class="me-2"></div>
+                <span id="productReviews" class="text-muted"></span>
+              </div>
+
+              <!-- Pricing Section -->
+              <div class="price-section mb-4">
+                <div class="d-flex align-items-center gap-3 mb-2">
+                  <h3 id="currentPrice" class="text-success mb-0"></h3>
+                  <span id="originalPrice" class="text-decoration-line-through text-muted h5 mb-0"></span>
+                  <span id="discountBadge" class="badge bg-danger"></span>
+                </div>
+                <p id="savings" class="text-success mb-0 fw-semibold"></p>
+              </div>
+
+              <!-- Description -->
+              <div class="mb-4">
+                <h5>Description</h5>
+                <p id="productDescription" class="text-muted"></p>
+              </div>
+
+              <!-- Features -->
+              <div class="features-list mb-4">
+                <h5>Features</h5>
+                <ul id="featuresList" class="list-unstyled">
+                  <!-- Features will be loaded here -->
+                </ul>
+              </div>
+
+              <!-- Stock Status -->
+              <div id="stockStatus" class="mb-4 p-3 rounded bg-light"></div>
+
+              <!-- Add to Cart Section -->
+              <div class="d-grid gap-2">
+                <div class="input-group mb-3">
+                  <span class="input-group-text">Qty</span>
+                  <input type="number" id="quantityInput" class="form-control" value="1" min="1" max="10">
+                </div>
+                <button id="addToCartBtn" class="btn btn-gradient btn-lg">
+                  <i class="bi bi-cart-plus me-2"></i>Add to Cart
+                </button>
+              </div>
             </div>
           </div>
-        `;
-      } catch (err) {
-        document.getElementById("product-container").innerHTML = `<p class="text-danger">${err.message}</p>`;
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cart Sidebar -->
+  <div class="offcanvas offcanvas-end" tabindex="-1" id="cartCanvas">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title">Shopping Cart</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+      <!-- Empty Cart State -->
+      <div id="emptyCartState" class="text-center py-5">
+        <i class="bi bi-cart-x display-1 text-muted mb-3"></i>
+        <h5>Your cart is empty</h5>
+        <p class="text-muted">Add some products to get started!</p>
+      </div>
+
+      <!-- Cart Items Container -->
+      <div id="cartContainer"></div>
+
+      <!-- Cart Summary -->
+      <div id="cartSummary" class="d-none">
+        <hr>
+        <div class="d-flex justify-content-between">
+          <span>Subtotal:</span>
+          <span id="cartSubtotal">$0.00</span>
+        </div>
+        <div class="d-flex justify-content-between">
+          <span>Tax:</span>
+          <span id="cartTax">$0.00</span>
+        </div>
+        <div class="d-flex justify-content-between">
+          <span>Shipping:</span>
+          <span id="cartShipping">Free</span>
+        </div>
+        <hr>
+        <div class="d-flex justify-content-between fw-bold h5">
+          <span>Total:</span>
+          <span id="cartTotal">$0.00</span>
+        </div>
+        
+        <div class="d-grid gap-2 mt-3">
+          <button id="checkoutBtn" class="btn btn-gradient">
+            <i class="bi bi-credit-card me-2"></i>Checkout
+          </button>
+          <button id="clearCartBtn" class="btn btn-outline-danger">
+            <i class="bi bi-trash me-2"></i>Clear Cart
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="position-fixed top-0 end-0 p-3" style="z-index: 1050;"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/script.js"></script>
+  <script>
+    // Product-specific JavaScript
+    let currentUser = null;
+    let currentProduct = null;
+
+    // Get product ID from URL
+    const getProductIdFromURL = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('id');
+    };
+
+    // Go back function
+    const goBack = () => {
+      if (document.referrer && document.referrer.includes(window.location.origin)) {
+        window.history.back();
+      } else {
+        window.location.href = '/';
       }
-    }
+    };
 
-    async function addToCart(productId) {
-      const res = await fetch("/api/cart", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId, quantity: 1 })
+    // Toast function
+    const showToast = (message, type = 'success') => {
+      let toastContainer = document.getElementById('toast-container');
+      if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.className = 'position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '1050';
+        document.body.appendChild(toastContainer);
+      }
+
+      const toastId = 'toast-' + Date.now();
+      const toastHtml = `
+        <div id="${toastId}" class="toast" role="alert">
+          <div class="toast-header">
+            <i class="bi ${type === 'success' ? 'bi-check-circle text-success' : 
+                           type === 'error' ? 'bi-exclamation-circle text-danger' : 
+                           'bi-info-circle text-primary'} me-2"></i>
+            <strong class="me-auto">eCart</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+          </div>
+          <div class="toast-body">${message}</div>
+        </div>
+      `;
+      
+      toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+      const toastElement = document.getElementById(toastId);
+      const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
+      toast.show();
+      
+      toastElement.addEventListener('hidden.bs.toast', () => {
+        toastElement.remove();
       });
-      const data = await res.json();
-      alert(data.message || "Added to cart");
+    };
+
+    // Format price
+    const formatPrice = (price) => `$${price.toFixed(2)}`;
+
+    // Generate star rating
+    const generateStarRating = (rating) => {
+      const fullStars = Math.floor(rating);
+      const hasHalfStar = rating % 1 !== 0;
+      const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+      
+      return `
+        ${'<i class="bi bi-star-fill text-warning"></i>'.repeat(fullStars)}
+        ${hasHalfStar ? '<i class="bi bi-star-half text-warning"></i>' : ''}
+        ${'<i class="bi bi-star text-muted"></i>'.repeat(emptyStars)}
+        <span class="ms-2 text-muted">${rating.toFixed(1)}</span>
+      `;
+    };
+
+    // Load and render product
+    const loadProduct = async () => {
+      const productId = getProductIdFromURL();
+      
+      if (!productId) {
+        window.location.href = '/';
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/products/${productId}`, { credentials: 'include' });
+        if (!res.ok) throw new Error("Product not found");
+        
+        const product = await res.json();
+        currentProduct = product;
+        
+        // Update page title
+        document.title = `${product.name} - eCart`;
+        
+        // Render carousel images
+        const carouselImages = document.getElementById('carouselImages');
+        if (product.images && product.images.length > 0) {
+          carouselImages.innerHTML = product.images.map((img, index) => `
+            <div class="carousel-item ${index === 0 ? 'active' : ''}">
+              <img src="${img}" class="d-block w-100 product-image" alt="${product.name}" style="height: 400px; object-fit: cover;">
+            </div>
+          `).join("");
+        } else {
+          carouselImages.innerHTML = `
+            <div class="carousel-item active">
+              <img src="${product.image}" class="d-block w-100 product-image" alt="${product.name}" style="height: 400px; object-fit: cover;">
+            </div>
+          `;
+        }
+
+        // Update product details
+        document.getElementById('productName').textContent = product.name;
+        document.getElementById('productBrand').textContent = product.brand;
+        document.getElementById('productCategory').textContent = product.category;
+        document.getElementById('productDescription').textContent = product.description;
+        
+        // Update pricing
+        const hasDiscount = product.discount > 0;
+        const originalPrice = product.originalPrice || product.price;
+        
+        document.getElementById('currentPrice').textContent = formatPrice(product.price);
+        
+        if (hasDiscount) {
+          document.getElementById('originalPrice').textContent = formatPrice(originalPrice);
+          document.getElementById('originalPrice').style.display = 'inline';
+          document.getElementById('discountBadge').textContent = `-${product.discount}%`;
+          document.getElementById('discountBadge').style.display = 'inline-block';
+          document.getElementById('savings').textContent = `Save ${formatPrice(originalPrice - product.price)}`;
+          document.getElementById('savings').style.display = 'block';
+        } else {
+          document.getElementById('originalPrice').style.display = 'none';
+          document.getElementById('discountBadge').style.display = 'none';
+          document.getElementById('savings').style.display = 'none';
+        }
+
+        // Update rating
+        document.getElementById('productRating').innerHTML = generateStarRating(product.rating || 0);
+        document.getElementById('productReviews').textContent = `(${product.reviews || 0} reviews)`;
+
+        // Update features
+        if (product.features) {
+          document.getElementById('featuresList').innerHTML = product.features.map(feature => 
+            `<li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>${feature}</li>`
+          ).join('');
+        }
+
+        // Update stock status
+        const stockStatus = document.getElementById('stockStatus');
+        const addToCartBtn = document.getElementById('addToCartBtn');
+        
+        if (product.inStock) {
+          stockStatus.innerHTML = `<i class="bi bi-check-circle text-success me-2"></i>In Stock - ${product.stockCount} available`;
+          stockStatus.className = 'mb-4 p-3 rounded bg-success bg-opacity-10 border border-success';
+          addToCartBtn.disabled = false;
+        } else {
+          stockStatus.innerHTML = '<i class="bi bi-x-circle text-danger me-2"></i>Out of Stock';
+          stockStatus.className = 'mb-4 p-3 rounded bg-danger bg-opacity-10 border border-danger';
+          addToCartBtn.disabled = true;
+          addToCartBtn.innerHTML = '<i class="bi bi-x-circle me-2"></i>Out of Stock';
+          addToCartBtn.className = 'btn btn-secondary btn-lg';
+        }
+
+        // Show content
+        document.getElementById('productLoading').style.display = 'none';
+        document.getElementById('productContent').style.display = 'block';
+        
+      } catch (err) {
+        console.error('Error loading product:', err);
+        document.getElementById('productLoading').style.display = 'none';
+        document.getElementById('productError').style.display = 'block';
+        document.getElementById('productError').innerHTML = `
+          <div class="text-center py-5">
+            <i class="bi bi-exclamation-triangle display-1 text-danger mb-3"></i>
+            <h3>Product Not Found</h3>
+            <p class="text-muted">The product you're looking for doesn't exist or has been removed.</p>
+            <button class="btn btn-gradient" onclick="goBack()">
+              <i class="bi bi-arrow-left me-2"></i>Go Back
+            </button>
+          </div>
+        `;
+      }
+    };
+
+    // Add to cart function
+    const addToCart = async () => {
+      try {
+        // Check authentication using the script.js function
+        const authRes = await fetch("/api/auth/me", { credentials: "include" });
+        if (!authRes.ok) {
+          showToast('Please login to add items to cart', 'error');
+          setTimeout(() => window.location.href = '/login', 1500);
+          return;
+        }
+
+        const authData = await authRes.json();
+        currentUser = authData.user;
+
+        if (!currentProduct) {
+          showToast('Product not loaded', 'error');
+          return;
+        }
+
+        const quantityInput = document.getElementById('quantityInput');
+        const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
+        
+        const addToCartBtn = document.getElementById('addToCartBtn');
+        const originalText = addToCartBtn.innerHTML;
+        
+        // Show loading state
+        addToCartBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Adding...';
+        addToCartBtn.disabled = true;
+        
+        const result = await fetch('/api/cart', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ 
+            productId: currentProduct.id, 
+            quantity 
+          })
+        });
+
+        const data = await result.json();
+        
+        if (!result.ok) {
+          throw new Error(data.error || 'Failed to add to cart');
+        }
+
+        showToast(data.message || 'Product added to cart');
+        
+        // Update cart counter
+        await updateCartCounter();
+        
+      } catch (error) {
+        console.error('Error adding to cart:', error);
+        if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+          showToast('Please login to add items to cart', 'error');
+          setTimeout(() => window.location.href = '/login', 1500);
+        } else {
+          showToast(error.message || 'Failed to add product to cart', 'error');
+        }
+      } finally {
+        // Reset button
+        const addToCartBtn = document.getElementById('addToCartBtn');
+        if (addToCartBtn && currentProduct && currentProduct.inStock) {
+          addToCartBtn.innerHTML = '<i class="bi bi-cart-plus me-2"></i>Add to Cart';
+          addToCartBtn.disabled = false;
+        }
+      }
+    };
+
+    // Update cart counter
+    const updateCartCounter = async () => {
+      try {
+        const cartRes = await fetch('/api/cart', { credentials: 'include' });
+        if (cartRes.ok) {
+          const cartData = await cartRes.json();
+          const cartCount = document.getElementById('cartCount');
+          if (cartCount) {
+            const itemCount = cartData.items ? cartData.items.reduce((sum, item) => sum + item.quantity, 0) : 0;
+            cartCount.textContent = itemCount;
+          }
+        }
+      } catch (error) {
+        console.error('Error updating cart counter:', error);
+      }
+    };
+
+    // Initialize page
+    const initProductPage = async () => {
+      try {
+        // Load product
+        await loadProduct();
+        
+        // Update cart counter
+        await updateCartCounter();
+        
+        // Add event listener to add to cart button
+        const addToCartBtn = document.getElementById('addToCartBtn');
+        if (addToCartBtn) {
+          addToCartBtn.addEventListener('click', addToCart);
+        }
+        
+        console.log('📦 Product page initialized successfully!');
+        
+      } catch (error) {
+        console.error('Error initializing product page:', error);
+        showToast('Failed to initialize product page', 'error');
+      }
+    };
+
+    // Start when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initProductPage);
+    } else {
+      initProductPage();
     }
 
- function addGoBackButton() {
-    const container = document.getElementById("back-button-container");
-    const button = document.createElement("button");
-    button.className = "btn btn-secondary mb-3";
-    button.innerText = "← Back to Products";
-    button.onclick = () => window.location.href = "http://localhost:3000/api"; // your target URL
-    container.appendChild(button);
-  }
-
-  addGoBackButton();
-    loadProduct();
+    // Make functions global
+    window.goBack = goBack;
+    window.addToCart = addToCart;
   </script>
 </body>
 </html>

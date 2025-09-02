@@ -1,9 +1,37 @@
-// routes/productRoutes.js
 const express = require('express');
 const router = express.Router();
-const { PRODUCTS, findProduct, initCart, cartItemsWithDetail } = require('../products');
+const Product = require('../model/product');
+const { PRODUCTS } = require('../products'); // Your static products data
 
-// --- Products & Categories ---
+// Helper function to merge static product data with database data
+const mergeProductData = (dbProduct) => {
+  const staticProduct = PRODUCTS.find(p => p.id === dbProduct._id);
+  if (staticProduct) {
+    return {
+      ...staticProduct,
+      id: dbProduct._id, // Ensure id field exists
+      _id: dbProduct._id, // Keep MongoDB _id
+      name: dbProduct.name,
+      price: dbProduct.price,
+      image: dbProduct.image,
+      description: dbProduct.description
+    };
+  }
+  return {
+    id: dbProduct._id,
+    _id: dbProduct._id,
+    name: dbProduct.name,
+    price: dbProduct.price,
+    image: dbProduct.image || '',
+    description: dbProduct.description || '',
+    category: 'general',
+    brand: 'Unknown',
+    rating: 0,
+    reviews: 0,
+    inStock: true,
+    stockCount: 10
+  };
+};
 
 // Health check
 router.get('/health', (req, res) => {
@@ -11,8 +39,10 @@ router.get('/health', (req, res) => {
 });
 
 // Get all products (with filters & sorting)
-router.get('/products', (req, res) => {
+router.get('/products', async (req, res) => {
   try {
+    // For now, use static products data for filtering/sorting
+    // You can modify this to use database products if needed
     let results = [...PRODUCTS];
 
     // Search filter
@@ -67,11 +97,24 @@ router.get('/products', (req, res) => {
 });
 
 // Get single product
-router.get('/products/:id', (req, res) => {
+router.get('/products/:id', async (req, res) => {
   try {
-    const product = findProduct(req.params.id);
-    if (!product) return res.status(404).json({ error: 'Product not found' });
-    res.json(product);
+    const productId = req.params.id;
+    
+    // First try to find in static products
+    const staticProduct = PRODUCTS.find(p => p.id === productId);
+    if (staticProduct) {
+      return res.json(staticProduct);
+    }
+
+    // If not found in static, try database
+    const dbProduct = await Product.findById(productId);
+    if (dbProduct) {
+      const mergedProduct = mergeProductData(dbProduct);
+      return res.json(mergedProduct);
+    }
+
+    res.status(404).json({ error: 'Product not found' });
   } catch (error) {
     console.error('Error fetching product:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -89,113 +132,10 @@ router.get('/categories', (req, res) => {
   }
 });
 
-// --- Cart & Checkout ---
-
-router.get('/cart', (req, res) => {
-  try {
-    initCart(req);
-    res.json(cartItemsWithDetail(req.session.cart));
-  } catch (error) {
-    console.error('Error fetching cart:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-router.post('/cart', (req, res) => {
-  try {
-    initCart(req);
-    const { productId, quantity } = req.body || {};
-
-    if (!productId) return res.status(400).json({ error: 'Product ID is required' });
-
-    const qty = Math.max(1, parseInt(quantity) || 1);
-    const product = findProduct(productId);
-
-    if (!product) return res.status(404).json({ error: 'Product not found' });
-    if (!product.inStock) return res.status(400).json({ error: 'Product is out of stock' });
-
-    const currentQty = req.session.cart[productId] || 0;
-    const newQty = currentQty + qty;
-
-    if (newQty > product.stockCount) {
-      return res.status(400).json({ error: `Only ${product.stockCount} items available in stock` });
-    }
-
-    req.session.cart[productId] = newQty;
-    res.json({
-      ...cartItemsWithDetail(req.session.cart),
-      message: `${product.name} added to cart`
-    });
-  } catch (error) {
-    console.error('Error adding to cart:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-router.put('/cart/:productId', (req, res) => {
-  try {
-    initCart(req);
-    const { productId } = req.params;
-    const qty = Math.max(0, parseInt(req.body?.quantity) || 0);
-
-    const product = findProduct(productId);
-    if (!product) return res.status(404).json({ error: 'Product not found' });
-
-    if (qty === 0) {
-      delete req.session.cart[productId];
-    } else {
-      if (qty > product.stockCount) return res.status(400).json({ error: `Only ${product.stockCount} items available in stock` });
-      req.session.cart[productId] = qty;
-    }
-
-    res.json(cartItemsWithDetail(req.session.cart));
-  } catch (error) {
-    console.error('Error updating cart:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-router.delete('/cart/:productId', (req, res) => {
-  try {
-    initCart(req);
-    delete req.session.cart[req.params.productId];
-    res.json(cartItemsWithDetail(req.session.cart));
-  } catch (error) {
-    console.error('Error removing from cart:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-router.delete('/cart', (req, res) => {
-  try {
-    req.session.cart = {};
-    res.json({ message: 'Cart cleared successfully' });
-  } catch (error) {
-    console.error('Error clearing cart:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-router.post('/checkout', (req, res) => {
-  try {
-    initCart(req);
-    const cart = cartItemsWithDetail(req.session.cart);
-
-    if (!cart.items.length) return res.status(400).json({ error: 'Cart is empty' });
-
-    const orderId = 'ORDER-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-    req.session.cart = {}; // clear cart
-
-    res.json({
-      success: true,
-      orderId,
-      message: 'Order placed successfully! (Demo mode)',
-      orderTotal: cart.total
-    });
-  } catch (error) {
-    console.error('Error processing checkout:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+// Helper function to find product (used by cart routes)
+const findProduct = (productId) => {
+  return PRODUCTS.find(p => p.id === productId);
+};
 
 module.exports = router;
+module.exports.findProduct = findProduct;

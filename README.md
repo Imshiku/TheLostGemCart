@@ -40,7 +40,7 @@ This project is designed as a demo e-commerce store to showcase full-stack devel
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/your-username/TheLostGemCart.git
+git clone https://github.com/imshiku21/TheLostGemCart.git
 cd TheLostGemCart
 
 
