@@ -30,10 +30,17 @@
       background: var(--primary-gradient) !important;
     }
 
+
+
     .product-image {
-      border-radius: 15px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    }
+  width: 100%;
+  height: auto;
+  max-height: 400px; /* large screen pe limit */
+  object-fit: contain; /* pura image dikhane ke liye */
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
 
     .price-section {
       background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
@@ -333,20 +340,39 @@
         document.title = `${product.name} - eCart`;
         
         // Render carousel images
-        const carouselImages = document.getElementById('carouselImages');
-        if (product.images && product.images.length > 0) {
-          carouselImages.innerHTML = product.images.map((img, index) => `
-            <div class="carousel-item ${index === 0 ? 'active' : ''}">
-              <img src="${img}" class="d-block w-100 product-image" alt="${product.name}" style="height: 400px; object-fit: cover;">
-            </div>
-          `).join("");
-        } else {
-          carouselImages.innerHTML = `
-            <div class="carousel-item active">
-              <img src="${product.image}" class="d-block w-100 product-image" alt="${product.name}" style="height: 400px; object-fit: cover;">
-            </div>
-          `;
-        }
+        // const carouselImages = document.getElementById('carouselImages');
+        // if (product.images && product.images.length > 0) {
+        //   carouselImages.innerHTML = product.images.map((img, index) => `
+        //     <div class="carousel-item ${index === 0 ? 'active' : ''}">
+        //       <img src="${img}" class="d-block w-100 product-image" alt="${product.name}" style="height: 400px; object-fit: cover;">
+        //     </div>
+        //   `).join("");
+        // } else {
+        //   carouselImages.innerHTML = `
+        //     <div class="carousel-item active">
+        //       <img src="${product.image}" class="d-block w-100 product-image" alt="${product.name}" style="height: 400px; object-fit: cover;">
+        //     </div>
+        //   `;
+        // }
+
+// new updated code 
+
+// Render carousel images
+const carouselImages = document.getElementById('carouselImages');
+if (product.images && product.images.length > 0) {
+  carouselImages.innerHTML = product.images.map((img, index) => `
+    <div class="carousel-item ${index === 0 ? 'active' : ''}">
+      <img src="${img}" class="d-block w-100 product-image" alt="${product.name}">
+    </div>
+  `).join("");
+} else {
+  carouselImages.innerHTML = `
+    <div class="carousel-item active">
+      <img src="${product.image}" class="d-block w-100 product-image" alt="${product.name}">
+    </div>
+  `;
+}
+
 
         // Update product details
         document.getElementById('productName').textContent = product.name;

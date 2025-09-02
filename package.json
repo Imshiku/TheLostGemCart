@@ -1,5 +1,5 @@
 {
-  "name": "ecart",
+  "name": "thelostgemcart",
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
@@ -14,9 +14,9 @@
     "shopping-cart",
     "rest-api"
   ],
-  "author": "",
+  "author": "Shaquib Ahmad",
   "license": "ISC",
-  "description": "",
+  "description": "This is an ecommerce Website where we can order tech like things ",
   "dependencies": {
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
