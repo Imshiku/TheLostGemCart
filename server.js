@@ -1,4 +1,6 @@
 
+// claude code 
+
 require('dotenv').config();
 
 const express = require('express');
@@ -7,11 +9,15 @@ const path = require('path');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
+const passport = require('passport'); // ADD THIS
 
 const connectDB = require('./config/db');
 const productRoutes = require('./routes/productRoutes');
 const authRoutes = require('./routes/authRoutes');
 const cartRoutes = require("./routes/cartRoutes");
+
+// Import passport config
+require('./config/passport'); // ADD THIS
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -28,7 +34,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/img', express.static('img'));
 
-// Session middleware (keep for fallback compatibility)
+// Session middleware (UPDATED FOR GOOGLE AUTH)
 app.use(
   session({
     secret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
@@ -42,11 +48,15 @@ app.use(
   })
 );
 
+// ADD PASSPORT MIDDLEWARE
+app.use(passport.initialize());
+app.use(passport.session());
+
 // Connect MongoDB
 connectDB();
 
 // --- Routes ---
-app.use('/api/auth', authRoutes);  // Authentication routes
+app.use('/api/auth', authRoutes);  // Authentication routes (will include Google routes)
 app.use("/api", cartRoutes);       // Cart routes
 app.use('/api', productRoutes);    // Product routes
 
@@ -84,5 +94,3 @@ app.listen(PORT, () => {
   console.log(`📁 Serving static files from: ${path.join(__dirname, 'public')}`);
   console.log(`🛒 API available at: http://localhost:${PORT}/api`);
 });
-
-module.exports = app;

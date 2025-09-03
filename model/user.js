@@ -1,4 +1,5 @@
 
+
 const mongoose = require("mongoose");
 
 // 🛒 Cart Item Schema
@@ -11,7 +12,25 @@ const cartItemSchema = new mongoose.Schema({
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  passwordHash: { type: String, required: true },
+  
+  // Make passwordHash optional if googleId exists
+  passwordHash: {
+    type: String,
+    required: function() {
+      return !this.googleId;
+    }
+  },
+  
+  // Add Google OAuth fields
+  googleId: {
+    type: String,
+    sparse: true
+  },
+  profilePicture: {
+    type: String,
+    default: ''
+  },
+  
   cart: [cartItemSchema] // Array of cart items
 }, { timestamps: true });
 
